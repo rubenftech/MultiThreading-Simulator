@@ -5,8 +5,9 @@
 
 #include <stdio.h>
 
-int SWITCH = 8;
+const int SWITCH = 8;
 
+// Arithmetic operations
 void ADD(tcontext* context, int dst, int src1, int src2) {
     context->reg[dst] = context->reg[src1] + context->reg[src2];
 }
@@ -23,6 +24,8 @@ void SUBI(tcontext* context, int dst, int src1, int imm) {
     context->reg[dst] = context->reg[src1] - imm;
 }
 
+
+// Find next thread to execute
 static int FindNextThread(int currentThread, int totalThreads, const long int *remainingExecutionTime) {
     int nextThread = (currentThread + 1) % totalThreads;
     for (int i = 0; i < totalThreads; i++) {
@@ -34,6 +37,7 @@ static int FindNextThread(int currentThread, int totalThreads, const long int *r
     return -1;
 }
 
+// Execute instruction and update context (not including load/store)
 void ExecuteInstruction(Instruction instruction, tcontext *context) {
     switch (instruction.opcode) {
         case CMD_ADD:
@@ -53,6 +57,19 @@ void ExecuteInstruction(Instruction instruction, tcontext *context) {
     }
 }
 
+// Perform load or store operation
+static void PerformLoadOrStore(Instruction instruction, tcontext *threadContext) {
+    int src2 = (instruction.isSrc2Imm) ? instruction.src2_index_imm : threadContext->reg[instruction.src2_index_imm];
+
+    if (instruction.opcode == CMD_LOAD) {
+        SIM_MemDataRead(threadContext->reg[instruction.src1_index] + src2, &threadContext->reg[instruction.dst_index]);
+    } else if (instruction.opcode == CMD_STORE) {
+        SIM_MemDataWrite(threadContext->reg[instruction.dst_index] + src2, threadContext->reg[instruction.src1_index]);
+    }
+}
+
+
+// Update remaining execution time for all threads to simulate time passing
 void UpdateThreadExecutionTime(int totalThreads, long int *remainingExecutionTime, int time) {
     for (int i = 0; i < totalThreads; i++) {
         if (remainingExecutionTime[i] != 0) {
@@ -87,24 +104,31 @@ void CORE_BlockedMT() {
     long int *remainingExecutionTime = (long int *)calloc(totalThreads, sizeof(long int));
     uint32_t *nextInstructionLine = (uint32_t *)calloc(totalThreads, sizeof(uint32_t));
 
-
+    while (completedThreadsCount != totalThreads) {
+        // Find next thread to execute
+        int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads, remainingExecutionTime);
+        // FILL IN CODE HERE
+    }
 }
 
 void CORE_FinegrainedMT() {
+
 }
 
-double CORE_BlockedMT_CPI(){
-	return 0;
+double CORE_BlockedMT_CPI() {
+
 }
 
 double CORE_FinegrainedMT_CPI(){
-	return 0;
+
 }
 
 void CORE_BlockedMT_CTX(tcontext* context, int threadid) {
+
 }
 
 void CORE_FinegrainedMT_CTX(tcontext* context, int threadid) {
+
 }
 
 
