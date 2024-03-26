@@ -82,9 +82,9 @@ void UpdateThreadExecutionTime(int totalThreads, long int *remainingExecutionTim
 
 void CORE_BlockedMT() {
     int completedThreadsCount = 0;
-    int currentThreadIndex = 0;
-    int blockedCycle = 0;
-    int blockedOperation = 0;
+    //int currentThreadIndex = 0;
+    //int blockedCycle = 0;
+    //int blockedOperation = 0;
     int totalThreads = SIM_GetThreadsNum();
 
     // Allocate register files
@@ -101,12 +101,12 @@ void CORE_BlockedMT() {
     commandExecutionTime[CMD_STORE] += SIM_GetStoreLat();
     commandExecutionTime[SWITCH] = SIM_GetSwitchCycles();
 
-    long int *remainingExecutionTime = (long int *)calloc(totalThreads, sizeof(long int));
-    uint32_t *nextInstructionLine = (uint32_t *)calloc(totalThreads, sizeof(uint32_t));
+    //long int *remainingExecutionTime = (long int *)calloc(totalThreads, sizeof(long int));
+   // uint32_t *nextInstructionLine = (uint32_t *)calloc(totalThreads, sizeof(uint32_t));
 
     while (completedThreadsCount != totalThreads) {
         // Find next thread to execute
-        int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads, remainingExecutionTime);
+       // int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads, remainingExecutionTime);
         // FILL IN CODE HERE
     }
 }
