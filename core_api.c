@@ -60,7 +60,6 @@ void ExecuteInstruction(Instruction instruction, tcontext *context) {
 // Perform load or store operation
 static void PerformLoadOrStore(Instruction instruction, tcontext *threadContext) {
     int src2 = (instruction.isSrc2Imm) ? instruction.src2_index_imm : threadContext->reg[instruction.src2_index_imm];
-
     if (instruction.opcode == CMD_LOAD) {
         SIM_MemDataRead(threadContext->reg[instruction.src1_index] + src2, &threadContext->reg[instruction.dst_index]);
     } else if (instruction.opcode == CMD_STORE){
@@ -82,9 +81,9 @@ void UpdateThreadExecutionTime(int totalThreads, long int *remainingExecutionTim
 
 void CORE_BlockedMT() {
     int completedThreadsCount = 0;
-    //int currentThreadIndex = 0;
-    //int blockedCycle = 0;
-    //int blockedOperation = 0;
+    int currentThreadIndex = 0;
+    int blockedCycle = 0;
+    int blockedOperation = 0;
     int totalThreads = SIM_GetThreadsNum();
 
     // Allocate register files
@@ -95,18 +94,19 @@ void CORE_BlockedMT() {
             threadContexts[threadIndex].reg[regIndex] = 0;
         }
     }
+
     // Allocate remaining execution time array
     int commandExecutionTime[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
     commandExecutionTime[CMD_LOAD] += SIM_GetLoadLat();
     commandExecutionTime[CMD_STORE] += SIM_GetStoreLat();
     commandExecutionTime[SWITCH] = SIM_GetSwitchCycles();
 
-    //long int *remainingExecutionTime = (long int *)calloc(totalThreads, sizeof(long int));
-   // uint32_t *nextInstructionLine = (uint32_t *)calloc(totalThreads, sizeof(uint32_t));
+    long int *remainingExecutionTime = (long int *)calloc(totalThreads, sizeof(long int));
+    uint32_t *nextInstructionLine = (uint32_t *)calloc(totalThreads, sizeof(uint32_t));
 
     while (completedThreadsCount != totalThreads) {
         // Find next thread to execute
-       // int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads, remainingExecutionTime);
+        int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads, remainingExecutionTime);
         // FILL IN CODE HERE
     }
 }
@@ -133,6 +133,7 @@ void CORE_FinegrainedMT_CTX(tcontext* context, int threadid) {
 }
 
 
+//////////////////////////////////////////// TESTS////////////////////////////////////////////
 void test_ADD() {
     tcontext context;
     // Initialize registers
