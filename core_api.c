@@ -133,50 +133,74 @@ void CORE_FinegrainedMT_CTX(tcontext* context, int threadid) {
 }
 
 
-
 void test_ADD() {
     tcontext context;
-    // Initialiser les registres
+    // Initialize registers
     context.reg[0] = 5;
     context.reg[1] = 10;
-    // Exécuter ADD
-    ADD(&context, 2, 0, 1); // Attendu: reg[2] = 15
-    // Vérifier le résultat
+    // Execute ADD
+    ADD(&context, 2, 0, 1); // Expected: reg[2] = 15
+    // Check the result
     assert(context.reg[2] == 15);
+
+    // Additional test case
+    context.reg[0] = 20;
+    context.reg[1] = 30;
+    ADD(&context, 2, 0, 1); // Expected: reg[2] = 50
+    assert(context.reg[2] == 50);
 }
 
 void test_ADDI() {
     tcontext context;
     context.reg[0] = 5;
-    // Exécuter ADDI
-    ADDI(&context, 1, 0, 3); // Attendu: reg[1] = 8
+    // Execute ADDI
+    ADDI(&context, 1, 0, 3); // Expected: reg[1] = 8
     assert(context.reg[1] == 8);
+
+    // Additional test case
+    ADDI(&context, 1, 0, -3); // Expected: reg[1] = 2
+    assert(context.reg[1] == 2);
 }
 
 void test_SUB() {
     tcontext context;
     context.reg[0] = 15;
     context.reg[1] = 5;
-    // Exécuter SUB
-    SUB(&context, 2, 0, 1); // Attendu: reg[2] = 10
+    // Execute SUB
+    SUB(&context, 2, 0, 1); // Expected: reg[2] = 10
     assert(context.reg[2] == 10);
+
+    // Additional test case
+    SUB(&context, 2, 1, 0); // Expected: reg[2] = -10
+    assert(context.reg[2] == -10);
 }
 
 void test_SUBI() {
     tcontext context;
     context.reg[0] = 10;
-    // Exécuter SUBI
-    SUBI(&context, 1, 0, 5); // Attendu: reg[1] = 5
+    // Execute SUBI
+    SUBI(&context, 1, 0, 5); // Expected: reg[1] = 5
     assert(context.reg[1] == 5);
+
+    // Additional test case
+    SUBI(&context, 1, 0, -5); // Expected: reg[1] = 15
+    assert(context.reg[1] == 15);
 }
 
 void test_FindNextThread() {
     long int remainingExecutionTime[] = {0, 10, 5, 0};
     int totalThreads = sizeof(remainingExecutionTime) / sizeof(long int);
-    // Exécuter FindNextThread
+    // Execute FindNextThread
     int nextThread = FindNextThread(0, totalThreads, remainingExecutionTime);
-    // Attendu : le prochain thread est 1
+    // Expected: next thread is 1
     assert(nextThread == 1);
+
+    // Additional test case: No active threads
+    remainingExecutionTime[1] = 0;
+    remainingExecutionTime[2] = 0;
+    nextThread = FindNextThread(0, totalThreads, remainingExecutionTime);
+    // Expected: no active thread, return -1
+    assert(nextThread == -1);
 }
 
 void test_ExecuteInstruction_ADD() {
@@ -198,31 +222,38 @@ void test_UpdateThreadExecutionTime() {
     assert(remainingExecutionTime[3] == 0);
 }
 
-
 void test_PerformLoad() {
-    // Initialisation de la mémoire simulée
+    // Initialize simulated memory
 
     tcontext context;
-    context.reg[0] = 0;  // Valeur de test pour src1
-    context.reg[1] = 10; // Adresse de base pour le chargement
-    context.reg[2] = 0;  // Valeur initiale du registre destination
+    context.reg[0] = 0;  // Test value for src1
+    context.reg[1] = 10; // Base address for loading
+    context.reg[2] = 0;  // Initial value of the destination register
 
-    Instruction instruction = {CMD_LOAD, 2, 1, 0, false}; // Instruction LOAD
+    Instruction instruction = {CMD_LOAD, 2, 1, 0, false}; // LOAD instruction
 
     PerformLoadOrStore(instruction, &context);
 
-    assert(context.reg[2] == 123); // Vérifier si la valeur chargée est correcte
+    assert(context.reg[2] == 123); // Check if the loaded value is correct
 }
 
 void test_PerformStore() {
-    // Initialisation de la mémoire simulée
+    // Initialize simulated memory
 
     tcontext context;
-    context.reg[0] = 0;  // Valeur de test pour src1
-    context.reg[1] = 456; // Valeur à stocker
-    context.reg[2] = 10;  // Adresse de base pour le stockage
+    context.reg[0] = 0;  // Test value for src1
+    context.reg[1] = 456; // Value to store
+    context.reg[2] = 10;  // Base address for storage
 
-    Instruction instruction = {CMD_STORE, 1, 2, 0, false}; // Instruction STORE
+    Instruction instruction = {CMD_STORE, 1, 2, 0, false}; // STORE instruction
 
     PerformLoadOrStore(instruction, &context);
+
+    // Check if the value is correctly stored
+    //assert(simulatedMemory[10] == 456); // This assumes simulatedMemory is accessible here
+
+    // Additional test case: storing at a different address
+    context.reg[2] = 20; // New base address for storage
+    PerformLoadOrStore(instruction, &context);
+    //assert(simulatedMemory[20] == 456); // Check the new storage location
 }
