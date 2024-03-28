@@ -4,7 +4,15 @@
 #include "core_api.h"
 #include "sim_api.h"
 
+class Thread;
+
+/* ----- globals ----- */
+
 const int SWITCH = 8;
+
+std::vector<Thread> g_fg_threads;
+size_t g_fg_cycles = 0;
+size_t g_fg_retire_count = 0;
 
 /* ----- Arithmetic Operations ----- */
 
@@ -118,51 +126,7 @@ UpdateThreadExecutionTime(
     }
 }
 
-/* ----- External API Functions ----- */
-
-void CORE_BlockedMT()
-{
-    int completedThreadsCount = 0;
-    int currentThreadIndex = 0;
-    int blockedCycle = 0;
-    int blockedOperation = 0;
-    int totalThreads = SIM_GetThreadsNum();
-
-    // Allocate register files
-    tcontext * threadContexts = (tcontext *)malloc(totalThreads * sizeof(tcontext));
-    // Init thread registers
-    for (int threadIndex = 0; threadIndex < totalThreads; threadIndex++)
-    {
-        for (int regIndex = 0; regIndex < REGS_COUNT; regIndex++)
-        {
-            threadContexts[threadIndex].reg[regIndex] = 0;
-        }
-    }
-
-    // Allocate remaining execution time array
-    int commandExecutionTime[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-    commandExecutionTime[CMD_LOAD] += SIM_GetLoadLat();
-    commandExecutionTime[CMD_STORE] += SIM_GetStoreLat();
-    commandExecutionTime[SWITCH] = SIM_GetSwitchCycles();
-
-    long int * remainingExecutionTime = (long int *)calloc(totalThreads,
-                                                           sizeof(long int));
-    uint32_t * nextInstructionLine = (uint32_t *)calloc(totalThreads,
-                                                        sizeof(uint32_t));
-
-    while (completedThreadsCount != totalThreads)
-    {
-        // Find next thread to execute
-//        int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads,
-//                                             remainingExecutionTime);
-        // FILL IN CODE HERE
-        break;
-    }
-
-    free(threadContexts);
-    free(remainingExecutionTime);
-    free(nextInstructionLine);
-}
+/* ----- Classes ----- */
 
 class Thread
 {
@@ -273,16 +237,51 @@ public:
     }
 };
 
-std::vector<Thread> g_fg_threads;
+/* ----- External API Functions ----- */
 
-size_t g_cycles = 0;
-size_t g_inst_count = 0;
-
-int increment_tid(int thread_count, int tid)
+void CORE_BlockedMT()
 {
-    ++tid;
-    tid %= thread_count;
-    return tid;
+    int completedThreadsCount = 0;
+//    int currentThreadIndex = 0;
+//    int blockedCycle = 0;
+//    int blockedOperation = 0;
+    int totalThreads = SIM_GetThreadsNum();
+
+    // Allocate register files
+    tcontext * threadContexts = (tcontext *)malloc(
+        totalThreads * sizeof(tcontext));
+    // Init thread registers
+    for (int threadIndex = 0; threadIndex < totalThreads; threadIndex++)
+    {
+        for (int regIndex = 0; regIndex < REGS_COUNT; regIndex++)
+        {
+            threadContexts[threadIndex].reg[regIndex] = 0;
+        }
+    }
+
+    // Allocate remaining execution time array
+    int commandExecutionTime[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+    commandExecutionTime[CMD_LOAD] += SIM_GetLoadLat();
+    commandExecutionTime[CMD_STORE] += SIM_GetStoreLat();
+    commandExecutionTime[SWITCH] = SIM_GetSwitchCycles();
+
+    long int * remainingExecutionTime = (long int *)calloc(totalThreads,
+                                                           sizeof(long int));
+    uint32_t * nextInstructionLine = (uint32_t *)calloc(totalThreads,
+                                                        sizeof(uint32_t));
+
+    while (completedThreadsCount != totalThreads)
+    {
+        // Find next thread to execute
+//        int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads,
+//                                             remainingExecutionTime);
+        // FILL IN CODE HERE
+        break;
+    }
+
+    free(threadContexts);
+    free(remainingExecutionTime);
+    free(nextInstructionLine);
 }
 
 void CORE_FinegrainedMT()
@@ -317,8 +316,8 @@ void CORE_FinegrainedMT()
             if (instruction_succeeded)
             {
                 are_all_idle = false;
-                ++g_cycles;
-                ++g_inst_count;
+                ++g_fg_cycles;
+                ++g_fg_retire_count;
 
                 // If the thread finished, remove it from active thread count.
                 if (thread.is_finished())
@@ -330,7 +329,7 @@ void CORE_FinegrainedMT()
 
         if (are_all_idle)
         {
-            ++g_cycles;
+            ++g_fg_cycles;
         }
     }
 }
@@ -342,7 +341,7 @@ double CORE_BlockedMT_CPI()
 
 double CORE_FinegrainedMT_CPI()
 {
-    return (double)g_cycles / (double)g_inst_count;
+    return (double)g_fg_cycles / (double)g_fg_retire_count;
 }
 
 void CORE_BlockedMT_CTX(tcontext * context, int threadid)
