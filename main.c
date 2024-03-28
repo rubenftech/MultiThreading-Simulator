@@ -5,8 +5,8 @@
 #include "sim_api.h"
 
 
-
-int main(int argc, char const *argv[]) {
+int main(int argc, char const * argv[])
+{
     //tests
     test_ADD();
     printf("Add test passed\n");

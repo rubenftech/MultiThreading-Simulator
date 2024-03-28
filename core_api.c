@@ -8,28 +8,35 @@
 const int SWITCH = 8;
 
 // Arithmetic operations
-void ADD(tcontext* context, int dst, int src1, int src2) {
+void ADD(tcontext * context, int dst, int src1, int src2)
+{
     context->reg[dst] = context->reg[src1] + context->reg[src2];
 }
 
-void ADDI(tcontext* context, int dst, int src1, int imm) {
+void ADDI(tcontext * context, int dst, int src1, int imm)
+{
     context->reg[dst] = context->reg[src1] + imm;
 }
 
-void SUB(tcontext* context, int dst, int src1, int src2) {
+void SUB(tcontext * context, int dst, int src1, int src2)
+{
     context->reg[dst] = context->reg[src1] - context->reg[src2];
 }
 
-void SUBI(tcontext* context, int dst, int src1, int imm) {
+void SUBI(tcontext * context, int dst, int src1, int imm)
+{
     context->reg[dst] = context->reg[src1] - imm;
 }
 
 
 // Find next thread to execute
-static int FindNextThread(int currentThread, int totalThreads, const long int *remainingExecutionTime) {
+static int FindNextThread(int currentThread, int totalThreads, const long int * remainingExecutionTime)
+{
     int nextThread = (currentThread + 1) % totalThreads;
-    for (int i = 0; i < totalThreads; i++) {
-        if (remainingExecutionTime[nextThread] != 0) {
+    for (int i = 0; i < totalThreads; i++)
+    {
+        if (remainingExecutionTime[nextThread] != 0)
+        {
             return nextThread;
         }
         nextThread = (nextThread + 1) % totalThreads;
@@ -38,8 +45,10 @@ static int FindNextThread(int currentThread, int totalThreads, const long int *r
 }
 
 // Execute instruction and update context (not including load/store)
-void ExecuteInstruction(Instruction instruction, tcontext *context) {
-    switch (instruction.opcode) {
+void ExecuteInstruction(Instruction instruction, tcontext * context)
+{
+    switch (instruction.opcode)
+    {
         case CMD_ADD:
             ADD(context, instruction.dst_index, instruction.src1_index, instruction.src2_index_imm);
             break;
@@ -58,28 +67,35 @@ void ExecuteInstruction(Instruction instruction, tcontext *context) {
 }
 
 // Perform load or store operation
-static void PerformLoadOrStore(Instruction instruction, tcontext *threadContext) {
+static void PerformLoadOrStore(Instruction instruction, tcontext * threadContext)
+{
     int src2 = (instruction.isSrc2Imm) ? instruction.src2_index_imm : threadContext->reg[instruction.src2_index_imm];
-    if (instruction.opcode == CMD_LOAD) {
+    if (instruction.opcode == CMD_LOAD)
+    {
         SIM_MemDataRead(threadContext->reg[instruction.src1_index] + src2, &threadContext->reg[instruction.dst_index]);
-    } else if (instruction.opcode == CMD_STORE){
+    }
+    else if (instruction.opcode == CMD_STORE)
+    {
         SIM_MemDataWrite(threadContext->reg[instruction.dst_index] + src2, threadContext->reg[instruction.src1_index]);
     }
 }
 
 
 // Update remaining execution time for all threads to simulate time passing
-void UpdateThreadExecutionTime(int totalThreads, long int *remainingExecutionTime, int time) {
-    for (int i = 0; i < totalThreads; i++) {
-        if (remainingExecutionTime[i] != 0) {
+void UpdateThreadExecutionTime(int totalThreads, long int * remainingExecutionTime, int time)
+{
+    for (int i = 0; i < totalThreads; i++)
+    {
+        if (remainingExecutionTime[i] != 0)
+        {
             remainingExecutionTime[i] -= time;
         }
     }
 }
 
 
-
-void CORE_BlockedMT() {
+void CORE_BlockedMT()
+{
     int completedThreadsCount = 0;
     int currentThreadIndex = 0;
     int blockedCycle = 0;
@@ -87,54 +103,63 @@ void CORE_BlockedMT() {
     int totalThreads = SIM_GetThreadsNum();
 
     // Allocate register files
-    tcontext *threadContexts = (tcontext *)malloc(totalThreads * sizeof(tcontext));
+    tcontext * threadContexts = (tcontext *)malloc(totalThreads * sizeof(tcontext));
     // Init thread registers
-    for (int threadIndex = 0; threadIndex < totalThreads; threadIndex++) {
-        for (int regIndex = 0; regIndex < REGS_COUNT; regIndex++) {
+    for (int threadIndex = 0; threadIndex < totalThreads; threadIndex++)
+    {
+        for (int regIndex = 0; regIndex < REGS_COUNT; regIndex++)
+        {
             threadContexts[threadIndex].reg[regIndex] = 0;
         }
     }
 
     // Allocate remaining execution time array
-    int commandExecutionTime[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+    int commandExecutionTime[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
     commandExecutionTime[CMD_LOAD] += SIM_GetLoadLat();
     commandExecutionTime[CMD_STORE] += SIM_GetStoreLat();
     commandExecutionTime[SWITCH] = SIM_GetSwitchCycles();
 
-    long int *remainingExecutionTime = (long int *)calloc(totalThreads, sizeof(long int));
-    uint32_t *nextInstructionLine = (uint32_t *)calloc(totalThreads, sizeof(uint32_t));
+    long int * remainingExecutionTime = (long int *)calloc(totalThreads, sizeof(long int));
+    uint32_t * nextInstructionLine = (uint32_t *)calloc(totalThreads, sizeof(uint32_t));
 
-    while (completedThreadsCount != totalThreads) {
+    while (completedThreadsCount != totalThreads)
+    {
         // Find next thread to execute
         int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads, remainingExecutionTime);
         // FILL IN CODE HERE
     }
 }
 
-void CORE_FinegrainedMT() {
+void CORE_FinegrainedMT()
+{
 
 }
 
-double CORE_BlockedMT_CPI() {
+double CORE_BlockedMT_CPI()
+{
     return 0;
 
 }
 
-double CORE_FinegrainedMT_CPI(){
+double CORE_FinegrainedMT_CPI()
+{
     return 0;
 }
 
-void CORE_BlockedMT_CTX(tcontext* context, int threadid) {
+void CORE_BlockedMT_CTX(tcontext * context, int threadid)
+{
 
 }
 
-void CORE_FinegrainedMT_CTX(tcontext* context, int threadid) {
+void CORE_FinegrainedMT_CTX(tcontext * context, int threadid)
+{
 
 }
 
 
 //////////////////////////////////////////// TESTS////////////////////////////////////////////
-void test_ADD() {
+void test_ADD()
+{
     tcontext context;
     // Initialize registers
     context.reg[0] = 5;
@@ -151,7 +176,8 @@ void test_ADD() {
     assert(context.reg[2] == 50);
 }
 
-void test_ADDI() {
+void test_ADDI()
+{
     tcontext context;
     context.reg[0] = 5;
     // Execute ADDI
@@ -163,7 +189,8 @@ void test_ADDI() {
     assert(context.reg[1] == 2);
 }
 
-void test_SUB() {
+void test_SUB()
+{
     tcontext context;
     context.reg[0] = 15;
     context.reg[1] = 5;
@@ -176,7 +203,8 @@ void test_SUB() {
     assert(context.reg[2] == -10);
 }
 
-void test_SUBI() {
+void test_SUBI()
+{
     tcontext context;
     context.reg[0] = 10;
     // Execute SUBI
@@ -188,8 +216,9 @@ void test_SUBI() {
     assert(context.reg[1] == 15);
 }
 
-void test_FindNextThread() {
-    long int remainingExecutionTime[] = {0, 10, 5, 0};
+void test_FindNextThread()
+{
+    long int remainingExecutionTime[] = { 0, 10, 5, 0 };
     int totalThreads = sizeof(remainingExecutionTime) / sizeof(long int);
     // Execute FindNextThread
     int nextThread = FindNextThread(0, totalThreads, remainingExecutionTime);
@@ -204,17 +233,19 @@ void test_FindNextThread() {
     assert(nextThread == -1);
 }
 
-void test_ExecuteInstruction_ADD() {
+void test_ExecuteInstruction_ADD()
+{
     tcontext context;
-    Instruction instruction = {CMD_ADD, 2, 0, 1, false};
+    Instruction instruction = { CMD_ADD, 2, 0, 1, false };
     context.reg[0] = 5;
     context.reg[1] = 10;
     ExecuteInstruction(instruction, &context);
     assert(context.reg[2] == 15);
 }
 
-void test_UpdateThreadExecutionTime() {
-    long int remainingExecutionTime[] = {10, 20, 0, 5};
+void test_UpdateThreadExecutionTime()
+{
+    long int remainingExecutionTime[] = { 10, 20, 0, 5 };
     int totalThreads = sizeof(remainingExecutionTime) / sizeof(long int);
     UpdateThreadExecutionTime(totalThreads, remainingExecutionTime, 5);
     assert(remainingExecutionTime[0] == 5);
@@ -223,7 +254,8 @@ void test_UpdateThreadExecutionTime() {
     assert(remainingExecutionTime[3] == 0);
 }
 
-void test_PerformLoad() {
+void test_PerformLoad()
+{
     // Initialize simulated memory
 
     tcontext context;
@@ -231,14 +263,15 @@ void test_PerformLoad() {
     context.reg[1] = 10; // Base address for loading
     context.reg[2] = 0;  // Initial value of the destination register
 
-    Instruction instruction = {CMD_LOAD, 2, 1, 0, false}; // LOAD instruction
+    Instruction instruction = { CMD_LOAD, 2, 1, 0, false }; // LOAD instruction
 
     PerformLoadOrStore(instruction, &context);
 
     assert(context.reg[2] == 123); // Check if the loaded value is correct
 }
 
-void test_PerformStore() {
+void test_PerformStore()
+{
     // Initialize simulated memory
 
     tcontext context;
@@ -246,7 +279,7 @@ void test_PerformStore() {
     context.reg[1] = 456; // Value to store
     context.reg[2] = 10;  // Base address for storage
 
-    Instruction instruction = {CMD_STORE, 1, 2, 0, false}; // STORE instruction
+    Instruction instruction = { CMD_STORE, 1, 2, 0, false }; // STORE instruction
 
     PerformLoadOrStore(instruction, &context);
 

@@ -35,14 +35,14 @@ int SIM_MemFree();
 
   * Any memory address that is not defined in the given image file is initialized to zero.
  */
-int SIM_MemReset(const char *memImgFname);
+int SIM_MemReset(const char * memImgFname);
 
 /*! SIM_ReadDataMem: Read data from main memory simulator
   \param[in] addr The memory location to read.
                   Note that while we read 32 bit data words, addressing is per byte, i.e., the address must be aligned to 4.
   \param[out] dst The destination location to read into
 */
-void SIM_MemDataRead(uint32_t addr, int32_t *dst);
+void SIM_MemDataRead(uint32_t addr, int32_t * dst);
 
 /*! SIM_MemDataWrite: Write a value to given memory address
   \param[in] addr The main memory address to write. Must be 4-byte-aligned
@@ -55,7 +55,7 @@ void SIM_MemDataWrite(uint32_t addr, int32_t val);
                   Note that while we read 32 bit data words, addressing is per byte, i.e., the address must be aligned to 4.
   \param[out] dst The destination location to read into
 */
-void SIM_MemInstRead(uint32_t line, Instruction *dst, int tid);
+void SIM_MemInstRead(uint32_t line, Instruction * dst, int tid);
 
 
 
@@ -82,7 +82,6 @@ int SIM_GetSwitchCycles();
   \param[out] number of threads
 */
 int SIM_GetThreadsNum();
-
 
 
 #ifdef __cplusplus
