@@ -142,12 +142,13 @@ private:
 
 public:
     Thread(size_t load_latency, size_t store_latency) :
-        m_context{0},
+        m_context{ 0 },
         m_pc(0),
         m_load_latency(load_latency),
         m_store_latency(store_latency),
         m_latency_count(0),
-        m_finished(false) {}
+        m_finished(false)
+    {}
 
     uint32_t get_pc() const
     {
@@ -350,7 +351,7 @@ void CORE_FinegrainedMT()
     int active_thread_count = thread_count;
 
     g_fg_threads.assign(thread_count, Thread(SIM_GetLoadLat(),
-                                                   SIM_GetStoreLat()));
+                                             SIM_GetStoreLat()));
 
     while (active_thread_count > 0)
     {
