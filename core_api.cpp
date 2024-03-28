@@ -254,16 +254,17 @@ public:
  * instruction in (at most) one active thread. The active thread executing an
  * instruction is picked using a RR.
  *
- * @param thread_count  Total number of threads in the core.
- * @param active_thread_count   Number of active threads in the core.
+ * @param thread_count IN   Total number of threads in the core.
+ * @param active_thread_count IN    Number of active threads in the core.
+ * @param last_tid INOUT    Last tid that was picked by the RR for execution.
+ * If a thread executed this cycle, `last_tid` updates to its id.
  * @return Number of active threads in the core at the end of the cycle. This
  * value can be lowered from the input number of active threads, reduced by one
  * if the thread that has executed reached a HALT instruction.
  */
-int fg_perform_cycle(int thread_count, int active_thread_count)
+int fg_perform_cycle(int thread_count, int active_thread_count, int &last_tid)
 {
     int tid = 0;
-    int last_tid = 0;
     int picked_tid = -1;
     bool is_picked = false;
     Instruction instruction;
@@ -286,12 +287,17 @@ int fg_perform_cycle(int thread_count, int active_thread_count)
         SIM_MemInstRead(thread.get_pc(), &instruction, picked_tid);
         thread.execute(instruction);
 
+        // If the thread finished, remove it from active count.
         if (thread.is_finished())
         {
             --active_thread_count;
         }
 
+        // Increment count of executed instructions.
         ++g_fg_retire_count;
+
+        // Update last tid.
+        last_tid = picked_tid;
     }
 
     ++g_fg_cycles;
@@ -349,6 +355,7 @@ void CORE_FinegrainedMT()
 {
     int thread_count = SIM_GetThreadsNum();
     int active_thread_count = thread_count;
+    int last_tid = 0;
 
     g_fg_threads.assign(thread_count, Thread(SIM_GetLoadLat(),
                                              SIM_GetStoreLat()));
@@ -356,7 +363,8 @@ void CORE_FinegrainedMT()
     while (active_thread_count > 0)
     {
         active_thread_count = fg_perform_cycle(thread_count,
-                                               active_thread_count);
+                                               active_thread_count,
+                                               last_tid);
     }
 }
 
