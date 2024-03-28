@@ -1,6 +1,6 @@
 
 #include "test.h"
-#include "core_api.c"
+#include "core_api.cpp"
 #include "sim_api.c"
 
 #include <stdio.h>

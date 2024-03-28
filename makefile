@@ -6,7 +6,7 @@ CFLAGS = -std=c99 -Wall -O0
 
 # Env for C++
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -O0
+CXXFLAGS = -std=c++11 -Wall -fpermissive -O0
 
 ifeq ($(DEBUG),1)
   CFLAGS += -g
@@ -29,12 +29,18 @@ ifeq ($(SRC_CORE),core_api.c)
 sim_main: $(OBJ)
 	gcc -o $@ $(OBJ)
 
+test: test.c
+	gcc $(CFLAGS) -o $@ $<
+
 sim_core.o: sim_core.c
 	gcc -c $(CFLAGS) -o $@ $<
 
 else
 sim_main: $(OBJ)
 	g++ -o $@ $(OBJ)
+
+test: test.cpp
+	g++ -c $(CXXFLAGS) -o $@ $<
 
 sim_core.o: sim_core.cpp
 	g++ -c $(CXXFLAGS) -o $@ $<
@@ -45,4 +51,4 @@ $(OBJ_GIVEN): %.o: %.c
 
 .PHONY: clean
 clean:
-	rm -f sim_main $(OBJ_GIVEN) $(OBJ_CORE)
+	rm -f sim_main $(OBJ_GIVEN) $(OBJ_CORE) test
