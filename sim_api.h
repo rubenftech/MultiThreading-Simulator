@@ -14,13 +14,12 @@ extern "C" {
 #include <string.h>
 #include <assert.h>
 
+/* ----- The memory simulator API ----- */
 
-
-/*********************************************/
-/* The memory simulator API                  */
-/*********************************************/
-//freeing all the allocations
-int SIM_MemFree();
+/**
+ * @brief Freeing all the allocations
+ */
+void SIM_MemFree();
 
 /*! SIM_MemReset: Reset the memory simulator and load memory image
   \param[in] memImgFname Memory image filename
@@ -57,11 +56,7 @@ void SIM_MemDataWrite(uint32_t addr, int32_t val);
 */
 void SIM_MemInstRead(uint32_t line, Instruction * dst, int tid);
 
-
-
-/*********************************************/
-/* Simulator parameters API                  */
-/*********************************************/
+/* ----- Simulator parameters API ----- */
 
 /*! SIM_GetLoadLat: Get LOAD instruction latency as defined in the config file (L{x})
   \param[out] load latency cycles

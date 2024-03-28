@@ -9,8 +9,5 @@ cmake-build-*/
 # Outputs
 *.o
 sim_main
-
-# Tests
-test.*
 test
 

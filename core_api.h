@@ -11,27 +11,6 @@ extern "C" {
 
 #define REGS_COUNT 8
 
-////// added for testing /////////////////
-void test_ADD();
-
-void test_ADDI();
-
-void test_SUB();
-
-void test_SUBI();
-
-void test_FindNextThread();
-
-void test_ExecuteInstruction_ADD();
-
-void test_UpdateThreadExecutionTime();
-
-void test_PerformLoad();
-
-void test_PerformStore();
-/////////////////////////////////
-
-
 typedef enum
 {
     CMD_NOP = 0,
