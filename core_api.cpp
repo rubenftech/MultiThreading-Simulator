@@ -159,7 +159,6 @@ public:
         int src2;
         if (m_latency_count > 0)
         {
-            --m_latency_count;
             return false;
         }
 
@@ -216,11 +215,20 @@ public:
         return true;
     }
 
-    bool is_active()
+    bool idle()
     {
-        bool result = !m_finished && m_latency_count > 0;
-        --m_latency_count;
-        return result;
+        if (m_finished)
+        {
+            return true;
+        }
+
+        if (m_latency_count > 0)
+        {
+            --m_latency_count;
+            return true;
+        }
+
+        return false;
     }
 
     bool is_finished() const
@@ -236,6 +244,58 @@ public:
         }
     }
 };
+
+/* ----- Helper Functions ----- */
+
+/**
+ * @brief Perform a single cycle of the machine. This includes idling on all
+ * threads waiting for memory operations, as well as executing a single
+ * instruction in (at most) one active thread. The active thread executing an
+ * instruction is picked using a RR.
+ *
+ * @param thread_count  Total number of threads in the core.
+ * @param active_thread_count   Number of active threads in the core.
+ * @return Number of active threads in the core at the end of the cycle. This
+ * value can be lowered from the input number of active threads, reduced by one
+ * if the thread that has executed reached a HALT instruction.
+ */
+int fg_perform_cycle(int thread_count, int active_thread_count)
+{
+    int tid = 0;
+    int last_tid = 0;
+    int picked_tid = -1;
+    bool is_picked = false;
+    Instruction instruction;
+
+    for (int i = 0; i < thread_count; ++i)
+    {
+        tid = (i + last_tid) % thread_count;
+        Thread &thread = g_fg_threads.at(tid);
+
+        if (!thread.idle() && !is_picked)
+        {
+            picked_tid = tid;
+            is_picked = true;
+        }
+    }
+
+    if (is_picked)
+    {
+        Thread &thread = g_fg_threads.at(picked_tid);
+        SIM_MemInstRead(thread.get_pc(), &instruction, picked_tid);
+        thread.execute(instruction);
+
+        if (thread.is_finished())
+        {
+            --active_thread_count;
+        }
+
+        ++g_fg_retire_count;
+    }
+
+    ++g_fg_cycles;
+    return active_thread_count;
+}
 
 /* ----- External API Functions ----- */
 
@@ -286,11 +346,6 @@ void CORE_BlockedMT()
 
 void CORE_FinegrainedMT()
 {
-    Instruction instruction;
-    int tid = 0;
-    bool are_all_idle;
-    bool instruction_succeeded;
-
     int thread_count = SIM_GetThreadsNum();
     int active_thread_count = thread_count;
 
@@ -299,38 +354,8 @@ void CORE_FinegrainedMT()
 
     while (active_thread_count > 0)
     {
-        are_all_idle = true;
-        for (tid = 0; tid < thread_count; ++tid)
-        {
-            Thread &thread = g_fg_threads.at(tid);
-
-            if (thread.is_finished())
-            {
-                continue;
-            }
-
-            // Fetch/decode & execute the instruction.
-            SIM_MemInstRead(thread.get_pc(), &instruction, tid);
-            instruction_succeeded = thread.execute(instruction);
-
-            if (instruction_succeeded)
-            {
-                are_all_idle = false;
-                ++g_fg_cycles;
-                ++g_fg_retire_count;
-
-                // If the thread finished, remove it from active thread count.
-                if (thread.is_finished())
-                {
-                    --active_thread_count;
-                }
-            }
-        }
-
-        if (are_all_idle)
-        {
-            ++g_fg_cycles;
-        }
+        active_thread_count = fg_perform_cycle(thread_count,
+                                               active_thread_count);
     }
 }
 
