@@ -88,7 +88,7 @@ void test_ExecuteInstruction_ADD()
     Instruction instruction = { CMD_ADD, 2, 0, 1, false };
     context.reg[0] = 5;
     context.reg[1] = 10;
-    ExecuteInstruction(instruction, &context);
+    execute_instruction(instruction, &context);
     assert(context.reg[2] == 15);
 }
 
@@ -114,7 +114,7 @@ void test_PerformLoad()
 
     Instruction instruction = { CMD_LOAD, 2, 1, 0, false }; // LOAD instruction
 
-    PerformLoadOrStore(instruction, &context);
+    execute_instruction(instruction, &context);
 
     assert(context.reg[2] == 123); // Check if the loaded value is correct
 }
@@ -130,14 +130,14 @@ void test_PerformStore()
 
     Instruction instruction = { CMD_STORE, 1, 2, 0, false }; // STORE instruction
 
-    PerformLoadOrStore(instruction, &context);
+    execute_instruction(instruction, &context);
 
     // Check if the value is correctly stored
     //assert(simulatedMemory[10] == 456); // This assumes simulatedMemory is accessible here
 
     // Additional test case: storing at a different address
     context.reg[2] = 20; // New base address for storage
-    PerformLoadOrStore(instruction, &context);
+    execute_instruction(instruction, &context);
     //assert(simulatedMemory[20] == 456); // Check the new storage location
 }
 
