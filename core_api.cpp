@@ -8,7 +8,7 @@ class Thread;
 
 /* ----- globals ----- */
 
-const int SWITCH = 8;
+//const int SWITCH = 8;
 
 std::vector<Thread> g_fg_threads;
 size_t g_fg_cycles = 0;
@@ -154,11 +154,20 @@ public:
         m_finished(false)
     {}
 
-    uint32_t get_pc() const
+    /**
+     * @brief Get the current PC of the thread.
+     */
+    size_t get_pc() const
     {
         return m_pc;
     }
 
+    /**
+     * @brief Execute the given instruction.
+     * @param instruction Instruction to execute.
+     * @return `true` if an instruction completed successfully, `false`
+     * in case the thread is inactive.
+     */
     bool execute(Instruction instruction)
     {
         int src2;
@@ -220,6 +229,16 @@ public:
         return true;
     }
 
+    /**
+     * @brief Perform an idle cycle. This is a cycle where the thread does not
+     * execute a command. This could be because it is finished, waiting for
+     * data from memory, or another thread is active.
+     * @note This is an _active_ method - the thread's state might change. Do
+     * not call this method more than once a cycle, or in the same cycle as the
+     * `execute` method (on the same thread).
+     * @return `true` if the thread is inactive (finished/waiting for memory),
+     * `false` otherwise.
+     */
     bool idle()
     {
         if (m_finished)
@@ -236,27 +255,32 @@ public:
         return false;
     }
 
+    /**
+     * @brief Check if the thread finished execution (occurs if the thread
+     * reached a HALT command).
+     */
     bool is_finished() const
     {
         return m_finished;
     }
 
+    /**
+     * @brief Copy the current context to the given container.
+     * @param dest Empty context to copy values to.
+     */
     void extract_context(tcontext * dest) const
     {
-        for (int i = 0; i < REGS_COUNT; ++i)
-        {
-            dest->reg[i] = m_context.reg[i];
-        }
+        memcpy(dest, &m_context, sizeof(m_context));
     }
 };
 
 /* ----- Helper Functions ----- */
 
 /**
- * @brief Perform a single cycle of the machine. This includes idling on all
- * threads waiting for memory operations, as well as executing a single
- * instruction in (at most) one active thread. The active thread executing an
- * instruction is picked using a RR.
+ * @brief Perform a single cycle of the machine in fine-grained mode. This
+ * includes idling on all threads waiting for memory operations, as well as
+ * executing a single instruction in (at most) one active thread. The active
+ * thread executing an instruction is picked using a RR.
  *
  * @param thread_count IN   Total number of threads in the core.
  * @param active_thread_count IN    Number of active threads in the core.
@@ -308,6 +332,25 @@ int fg_perform_cycle(int thread_count, int active_thread_count, int &last_tid)
     return active_thread_count;
 }
 
+/**
+ * @brief Perform a single cycle of the machine in blocking mode. This includes
+ * idling on all threads waiting for memory operations, as well as executing a
+ * single instruction in (at most) one active thread. The active thread
+ * executing an instruction is picked using a RR.
+ *
+ * Whenever switching between threads, some cycles of penalty are taken where
+ * the machine cannot execute any instructions.
+ *
+ * @param thread_count IN   Total number of threads in the core.
+ * @param active_thread_count IN    Number of active threads in the core.
+ * @param context_switch_penalty IN Number of cycles the cpu cannot execute
+ * instructions whenever it is context-switching.
+ * @param last_tid INOUT    Last tid that was picked by the RR for execution.
+ * If a thread executed this cycle, `last_tid` updates to its id.
+ * @return Number of active threads in the core at the end of the cycle. This
+ * value can be lowered from the input number of active threads, reduced by one
+ * if the thread that has executed reached a HALT instruction.
+ */
 int b_perform_cycle(
     int thread_count,
     int active_thread_count,
@@ -325,10 +368,11 @@ int b_perform_cycle(
         tid = (i + last_tid) % thread_count;
         Thread &thread = g_b_threads.at(tid);
 
-        bool is_active = !thread.idle();
-        if (is_active && !is_picked)
+        if (!thread.idle() && !is_picked)
         {
-            if (last_tid != -1 && tid != last_tid)
+            // If the picked thread is different from the last active one, do a
+            // context switch (during which all threads are idle).
+            if (tid != last_tid)
             {
                 for (int j = 0; j < context_switch_penalty; ++j)
                 {
