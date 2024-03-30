@@ -14,6 +14,10 @@ std::vector<Thread> g_fg_threads;
 size_t g_fg_cycles = 0;
 size_t g_fg_retire_count = 0;
 
+std::vector<Thread> g_b_threads;
+size_t g_b_cycles = 0;
+size_t g_b_retire_count = 0;
+
 /* ----- Arithmetic Operations ----- */
 
 void core_add(tcontext * context, int dst, int src1, int src2)
@@ -304,9 +308,68 @@ int fg_perform_cycle(int thread_count, int active_thread_count, int &last_tid)
     return active_thread_count;
 }
 
+int b_perform_cycle(
+    int thread_count,
+    int active_thread_count,
+    int context_switch_penalty,
+    int &last_tid)
+{
+    int tid = 0;
+    int picked_tid = -1;
+    bool is_picked = false;
+    Instruction instruction;
+
+    // Start from 1 to skip the last thread, which we tested separately.
+    for (int i = 0; i < thread_count; ++i)
+    {
+        tid = (i + last_tid) % thread_count;
+        Thread &thread = g_b_threads.at(tid);
+
+        bool is_active = !thread.idle();
+        if (is_active && !is_picked)
+        {
+            if (last_tid != -1 && tid != last_tid)
+            {
+                for (int j = 0; j < context_switch_penalty; ++j)
+                {
+                    for (int k = 0; k < thread_count; ++k)
+                    {
+                        g_b_threads.at(k).idle();
+                    }
+                    ++g_b_cycles;
+                }
+            }
+            picked_tid = tid;
+            is_picked = true;
+        }
+    }
+
+    if (is_picked)
+    {
+        Thread &thread = g_b_threads.at(picked_tid);
+        SIM_MemInstRead(thread.get_pc(), &instruction, picked_tid);
+        thread.execute(instruction);
+
+        // If the thread finished, remove it from active count.
+        if (thread.is_finished())
+        {
+            --active_thread_count;
+        }
+
+        // Increment count of executed instructions.
+        ++g_b_retire_count;
+
+        // Update last tid.
+        last_tid = picked_tid;
+    }
+
+    ++g_b_cycles;
+    return active_thread_count;
+}
+
 /* ----- External API Functions ----- */
 
-void CORE_BlockedMT()
+/*void CORE_BlockedMT()
 {
     int completedThreadsCount = 0;
 //    int currentThreadIndex = 0;
@@ -349,6 +412,25 @@ void CORE_BlockedMT()
     free(threadContexts);
     free(remainingExecutionTime);
     free(nextInstructionLine);
+}*/
+
+void CORE_BlockedMT()
+{
+    int thread_count = SIM_GetThreadsNum();
+    int active_thread_count = thread_count;
+    int context_switch_penalty = SIM_GetSwitchCycles();
+    int last_tid = 0;
+
+    g_b_threads.assign(thread_count, Thread(SIM_GetLoadLat(),
+                                             SIM_GetStoreLat()));
+
+    while (active_thread_count > 0)
+    {
+        active_thread_count = b_perform_cycle(thread_count,
+                                              active_thread_count,
+                                              context_switch_penalty,
+                                              last_tid);
+    }
 }
 
 void CORE_FinegrainedMT()
@@ -370,7 +452,7 @@ void CORE_FinegrainedMT()
 
 double CORE_BlockedMT_CPI()
 {
-    return 0;
+    return (double)g_b_cycles / (double)g_b_retire_count;
 }
 
 double CORE_FinegrainedMT_CPI()
@@ -380,7 +462,7 @@ double CORE_FinegrainedMT_CPI()
 
 void CORE_BlockedMT_CTX(tcontext * context, int threadid)
 {
-
+    g_b_threads.at(threadid).extract_context(&context[threadid]);
 }
 
 void CORE_FinegrainedMT_CTX(tcontext * context, int threadid)
