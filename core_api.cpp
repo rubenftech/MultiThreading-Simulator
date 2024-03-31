@@ -8,8 +8,6 @@ class Thread;
 
 /* ----- globals ----- */
 
-//const int SWITCH = 8;
-
 std::vector<Thread> g_fg_threads;
 size_t g_fg_cycles = 0;
 size_t g_fg_retire_count = 0;
@@ -40,95 +38,6 @@ void core_subi(tcontext * context, int dst, int src1, int imm)
     context->reg[dst] = context->reg[src1] - imm;
 }
 
-/* ----- Multithreading Functions ----- */
-
-// Find next thread to execute
-int
-FindNextThread(
-    int currentThread,
-    int totalThreads,
-    const long int * remainingExecutionTime)
-{
-    int nextThread = (currentThread + 1) % totalThreads;
-    for (int i = 0; i < totalThreads; i++)
-    {
-        if (remainingExecutionTime[nextThread] != 0)
-        {
-            return nextThread;
-        }
-        nextThread = (nextThread + 1) % totalThreads;
-    }
-    return -1;
-}
-
-// Execute instruction and update context (not including load/store)
-void
-execute_instruction(
-    Instruction instruction,
-    tcontext * context)
-{
-    int src2;
-
-    switch (instruction.opcode)
-    {
-        case CMD_ADD:
-            core_add(context,
-                     instruction.dst_index,
-                     instruction.src1_index,
-                     instruction.src2_index_imm);
-            break;
-        case CMD_ADDI:
-            core_addi(context,
-                      instruction.dst_index,
-                      instruction.src1_index,
-                      instruction.src2_index_imm);
-            break;
-        case CMD_SUB:
-            core_sub(context,
-                     instruction.dst_index,
-                     instruction.src1_index,
-                     instruction.src2_index_imm);
-            break;
-        case CMD_SUBI:
-            core_subi(context,
-                      instruction.dst_index,
-                      instruction.src1_index,
-                      instruction.src2_index_imm);
-            break;
-        case CMD_LOAD:
-            src2 = instruction.isSrc2Imm ?
-                   instruction.src2_index_imm :
-                   context->reg[instruction.src2_index_imm];
-            SIM_MemDataRead(context->reg[instruction.src1_index] + src2,
-                            &context->reg[instruction.dst_index]);
-            break;
-        case CMD_STORE:
-            src2 = instruction.isSrc2Imm ?
-                   instruction.src2_index_imm :
-                   context->reg[instruction.src2_index_imm];
-            SIM_MemDataWrite(context->reg[instruction.dst_index] + src2,
-                             context->reg[instruction.src1_index]);
-            break;
-        default:
-            break;
-    }
-}
-
-// Update remaining execution time for all threads to simulate time passing
-void
-UpdateThreadExecutionTime(
-    int totalThreads,
-    long int * remainingExecutionTime,
-    int time)
-{
-    for (int i = 0; i < totalThreads; i++)
-    {
-        if (remainingExecutionTime[i] != 0)
-        {
-            remainingExecutionTime[i] -= time;
-        }
-    }
-}
 
 /* ----- Classes ----- */
 
@@ -292,7 +201,7 @@ public:
  */
 int fg_perform_cycle(int thread_count, int active_thread_count, int &last_tid)
 {
-    int tid = 0;
+    int tid;
     int picked_tid = -1;
     bool is_picked = false;
     Instruction instruction;
@@ -357,7 +266,7 @@ int b_perform_cycle(
     int context_switch_penalty,
     int &last_tid)
 {
-    int tid = 0;
+    int tid;
     int picked_tid = -1;
     bool is_picked = false;
     Instruction instruction;
@@ -411,52 +320,6 @@ int b_perform_cycle(
     return active_thread_count;
 }
 
-/* ----- External API Functions ----- */
-
-/*void CORE_BlockedMT()
-{
-    int completedThreadsCount = 0;
-//    int currentThreadIndex = 0;
-//    int blockedCycle = 0;
-//    int blockedOperation = 0;
-    int totalThreads = SIM_GetThreadsNum();
-
-    // Allocate register files
-    tcontext * threadContexts = (tcontext *)malloc(
-        totalThreads * sizeof(tcontext));
-    // Init thread registers
-    for (int threadIndex = 0; threadIndex < totalThreads; threadIndex++)
-    {
-        for (int regIndex = 0; regIndex < REGS_COUNT; regIndex++)
-        {
-            threadContexts[threadIndex].reg[regIndex] = 0;
-        }
-    }
-
-    // Allocate remaining execution time array
-    int commandExecutionTime[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-    commandExecutionTime[CMD_LOAD] += SIM_GetLoadLat();
-    commandExecutionTime[CMD_STORE] += SIM_GetStoreLat();
-    commandExecutionTime[SWITCH] = SIM_GetSwitchCycles();
-
-    long int * remainingExecutionTime = (long int *)calloc(totalThreads,
-                                                           sizeof(long int));
-    uint32_t * nextInstructionLine = (uint32_t *)calloc(totalThreads,
-                                                        sizeof(uint32_t));
-
-    while (completedThreadsCount != totalThreads)
-    {
-        // Find next thread to execute
-//        int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads,
-//                                             remainingExecutionTime);
-        // FILL IN CODE HERE
-        break;
-    }
-
-    free(threadContexts);
-    free(remainingExecutionTime);
-    free(nextInstructionLine);
-}*/
 
 void CORE_BlockedMT()
 {
