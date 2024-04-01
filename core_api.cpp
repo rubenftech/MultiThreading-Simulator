@@ -284,13 +284,13 @@ public:
  *
  * @param thread_count IN   Total number of threads in the core.
  * @param active_thread_count IN    Number of active threads in the core.
- * @param last_tid INOUT    Last tid that was picked by the RR for execution.
- * If a thread executed this cycle, `last_tid` updates to its id.
+ * @param next_tid INOUT    Last tid that was picked by the RR for execution.
+ * If a thread executed this cycle, `next_tid` updates to its id.
  * @return Number of active threads in the core at the end of the cycle. This
  * value can be lowered from the input number of active threads, reduced by one
  * if the thread that has executed reached a HALT instruction.
  */
-int fg_perform_cycle(int thread_count, int active_thread_count, int &last_tid)
+int fg_perform_cycle(int thread_count, int active_thread_count, int &next_tid)
 {
     int tid = 0;
     int picked_tid = -1;
@@ -299,7 +299,7 @@ int fg_perform_cycle(int thread_count, int active_thread_count, int &last_tid)
 
     for (int i = 0; i < thread_count; ++i)
     {
-        tid = (i + last_tid) % thread_count;
+        tid = (i + next_tid) % thread_count;
         Thread &thread = g_fg_threads.at(tid);
 
         if (!thread.idle() && !is_picked)
@@ -325,7 +325,7 @@ int fg_perform_cycle(int thread_count, int active_thread_count, int &last_tid)
         ++g_fg_retire_count;
 
         // Update last tid.
-        last_tid = picked_tid;
+        next_tid = (picked_tid + 1) % thread_count;
     }
 
     ++g_fg_cycles;
@@ -413,51 +413,6 @@ int b_perform_cycle(
 
 /* ----- External API Functions ----- */
 
-/*void CORE_BlockedMT()
-{
-    int completedThreadsCount = 0;
-//    int currentThreadIndex = 0;
-//    int blockedCycle = 0;
-//    int blockedOperation = 0;
-    int totalThreads = SIM_GetThreadsNum();
-
-    // Allocate register files
-    tcontext * threadContexts = (tcontext *)malloc(
-        totalThreads * sizeof(tcontext));
-    // Init thread registers
-    for (int threadIndex = 0; threadIndex < totalThreads; threadIndex++)
-    {
-        for (int regIndex = 0; regIndex < REGS_COUNT; regIndex++)
-        {
-            threadContexts[threadIndex].reg[regIndex] = 0;
-        }
-    }
-
-    // Allocate remaining execution time array
-    int commandExecutionTime[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-    commandExecutionTime[CMD_LOAD] += SIM_GetLoadLat();
-    commandExecutionTime[CMD_STORE] += SIM_GetStoreLat();
-    commandExecutionTime[SWITCH] = SIM_GetSwitchCycles();
-
-    long int * remainingExecutionTime = (long int *)calloc(totalThreads,
-                                                           sizeof(long int));
-    uint32_t * nextInstructionLine = (uint32_t *)calloc(totalThreads,
-                                                        sizeof(uint32_t));
-
-    while (completedThreadsCount != totalThreads)
-    {
-        // Find next thread to execute
-//        int nextThreadIndex = FindNextThread(currentThreadIndex, totalThreads,
-//                                             remainingExecutionTime);
-        // FILL IN CODE HERE
-        break;
-    }
-
-    free(threadContexts);
-    free(remainingExecutionTime);
-    free(nextInstructionLine);
-}*/
-
 void CORE_BlockedMT()
 {
     int thread_count = SIM_GetThreadsNum();
@@ -481,7 +436,7 @@ void CORE_FinegrainedMT()
 {
     int thread_count = SIM_GetThreadsNum();
     int active_thread_count = thread_count;
-    int last_tid = 0;
+    int next_tid = 0;
 
     g_fg_threads.assign(thread_count, Thread(SIM_GetLoadLat(),
                                              SIM_GetStoreLat()));
@@ -490,7 +445,7 @@ void CORE_FinegrainedMT()
     {
         active_thread_count = fg_perform_cycle(thread_count,
                                                active_thread_count,
-                                               last_tid);
+                                               next_tid);
     }
 }
 

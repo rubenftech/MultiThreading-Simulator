@@ -13,15 +13,15 @@ void test_ADD()
     // Initialize registers
     context.reg[0] = 5;
     context.reg[1] = 10;
-    // Execute core__add
-    core__add(&context, 2, 0, 1); // Expected: reg[2] = 15
+    // Execute core_add
+    core_add(&context, 2, 0, 1); // Expected: reg[2] = 15
     // Check the result
     assert(context.reg[2] == 15);
 
     // Additional test case
     context.reg[0] = 20;
     context.reg[1] = 30;
-    core__add(&context, 2, 0, 1); // Expected: reg[2] = 50
+    core_add(&context, 2, 0, 1); // Expected: reg[2] = 50
     assert(context.reg[2] == 50);
 }
 
@@ -29,12 +29,12 @@ void test_ADDI()
 {
     tcontext context;
     context.reg[0] = 5;
-    // Execute core__addi
-    core__addi(&context, 1, 0, 3); // Expected: reg[1] = 8
+    // Execute core_addi
+    core_addi(&context, 1, 0, 3); // Expected: reg[1] = 8
     assert(context.reg[1] == 8);
 
     // Additional test case
-    core__addi(&context, 1, 0, -3); // Expected: reg[1] = 2
+    core_addi(&context, 1, 0, -3); // Expected: reg[1] = 2
     assert(context.reg[1] == 2);
 }
 
@@ -43,12 +43,12 @@ void test_SUB()
     tcontext context;
     context.reg[0] = 15;
     context.reg[1] = 5;
-    // Execute core__sub
-    core__sub(&context, 2, 0, 1); // Expected: reg[2] = 10
+    // Execute core_sub
+    core_sub(&context, 2, 0, 1); // Expected: reg[2] = 10
     assert(context.reg[2] == 10);
 
     // Additional test case
-    core__sub(&context, 2, 1, 0); // Expected: reg[2] = -10
+    core_sub(&context, 2, 1, 0); // Expected: reg[2] = -10
     assert(context.reg[2] == -10);
 }
 
@@ -56,12 +56,12 @@ void test_SUBI()
 {
     tcontext context;
     context.reg[0] = 10;
-    // Execute core__subi
-    core__subi(&context, 1, 0, 5); // Expected: reg[1] = 5
+    // Execute core_subi
+    core_subi(&context, 1, 0, 5); // Expected: reg[1] = 5
     assert(context.reg[1] == 5);
 
     // Additional test case
-    core__subi(&context, 1, 0, -5); // Expected: reg[1] = 15
+    core_subi(&context, 1, 0, -5); // Expected: reg[1] = 15
     assert(context.reg[1] == 15);
 }
 
